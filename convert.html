@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CSV to JSON</title>
+		<link rel="stylesheet" type="text/css" href="layout.css"/>
+	</head>
+
+	<body>
+		<h1>DCSV to JSON Conversion</h1>
+		
+		<p>Select file to convert CSV to JSON</p>
+
+		<div id="drop">
+			<button onclick="document.querySelector('input').click()">Select</button>
+			<input style="visibility: collapse; width: 0px;" type="file" onchange="upload(this.files[0])">
+		</div>
+
+		<div id="output"></div>
+
+	<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+	<script src="example.js"></script>
+	<script src="papaparse.min.js"></script>
+	<!-- <script src="csv.js"></script> -->
+	<script src="main.js"></script>
+</body>
+</html>
