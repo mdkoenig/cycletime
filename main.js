@@ -1,84 +1,65 @@
 var output = document.getElementById("output");
 
-/* Drag drop stuff */
-window.ondragover = function(e) {e.preventDefault()}
 
-window.ondrop = function(e) 
-{
-	e.preventDefault();
-	console.log("Reading...");
-	var length = e.dataTransfer.items.length;
-	if(length > 1)
-	{
-		console.log("Please only drop 1 file.");
-	} else 
-	{
-		upload(e.dataTransfer.files[0]);
+function upload(file) {
+	var reader = new FileReader();
+
+	reader.onload = function(e) {
+		var text = reader.result;
+		var results = parseCSV(text);
+		rolling(results);
 	}
+
+	reader.readAsText(file);
 }
 
-/* main upload function */
-function upload(file) 
-{
-	var config = buildConfig();
-	// var config = {
-	// 	chunkSize: 10485760,
-	// 	comments: "",
-	// 	delimiter: "",
-	// 	dynamicTyping: false,
-	// 	encoding: "",
-	// 	error: undefined,
-	// 	header: true,
-	// 	preview: 0,
-	// 	skipEmptyLines: false,
-	// 	step: undefined,
-	// 	worker: false,
-	// 	complete: function(results, file) {
-	// 		rolling(results);
-	// 	},
-	// }
+function parseCSV(str) {
+    var arr = [];
+    var quote = false;  // true means we're inside a quoted field
 
-	console.log(config);
+    // iterate over each character, keep track of current row and column (of the returned array)
+    for (var row = col = c = 0; c < str.length; c++) {
+        var cc = str[c], nc = str[c+1];        // current character, next character
+        arr[row] = arr[row] || [];             // create a new row if necessary
+        arr[row][col] = arr[row][col] || '';   // create a new column (start with empty string) if necessary
 
-	// var config = {
-	// 	delimiter: "",	// auto-detect
-	// 	newline: "",	// auto-detect
-	// 	quoteChar: '"',
-	// 	escapeChar: '"',
-	// 	header: true,
-	// 	trimHeader: false,
-	// 	dynamicTyping: false,
-	// 	preview: 0,
-	// 	encoding: "",
-	// 	worker: false,
-	// 	comments: false,
-	// 	step: undefined,
-	// 	complete: function(results, file) {
-	// 		rolling(results);
-	// 	},
-	// 	error: undefined,
-	// 	download: false,
-	// 	skipEmptyLines: true,
-	// 	chunk: undefined,
-	// 	fastMode: undefined,
-	// 	beforeFirstChunk: undefined,
-	// 	withCredentials: undefined
-	// }
+        // If the current character is a quotation mark, and we're inside a
+        // quoted field, and the next character is also a quotation mark,
+        // add a quotation mark to the current column and skip the next character
+        if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }  
 
-	Papa.parse(file, config);
+        // If it's just one quotation mark, begin/end quoted field
+        if (cc == '"') { quote = !quote; continue; }
+
+        // If it's a comma and we're not in a quoted field, move on to the next column
+        if (cc == ',' && !quote) { ++col; continue; }
+
+        // If it's a newline (CRLF) and we're not in a quoted field, skip the next character
+        // and move on to the next row and move to column 0 of that new row
+        if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
+
+        // If it's a newline (LF or CR) and we're not in a quoted field,
+        // move on to the next row and move to column 0 of that new row
+        if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+        if (cc == '\r' && !quote) { ++row; col = 0; continue; }
+
+        // Otherwise, append the current character to the current column
+        arr[row][col] += cc;
+    }
+    return arr;
 }
 
-// find the headers for the objects
-function showObject(obj) {
-  var result = [];
-  for (var p in obj) {
-    if( obj.hasOwnProperty(p) ) {
-      result.push(p);
-    } 
-  }              
-  return result;
-}
+function addHeaders(results, headers) {
+	for(let i = 1; i < results.length; i++) {
+		var tempRow = {};
+		for(let j = 0; j < headers.length; j++) {
+			tempRow[headers[j]] = results[i][j];
+		}
+		results[i] = tempRow;
+	}
 
+	return results;
+}
 
 function updatesIssues(issues, values) {
 	var property = "Key";
@@ -184,44 +165,22 @@ function calcOutput(stories) {
 		// console.log(lead);
 		stories.metrics.total = stories.metrics.total + lead;
 	}
+	var cycle = stories.metrics.total / stories.index.length;
+	stories.metrics.cycle = convertMS(cycle);
 	return stories;
 }
 
 // the main controller moving data from function to function
 function rolling(results) {
-	console.log("Raw results", results);
-	var headers = showObject(results.data[0]);
+	var headers = results[0];
 	console.log(headers);
-	results = fixParsing(results, headers);
-	console.log("Parsing complete:", results);
-	var issues = updatesIssues(results.data, headers);
+	results = addHeaders(results, headers);
+	console.log("Updated results", results);
+	var issues = updatesIssues(results, headers);
 	var stories = organizeIssues(issues);
-	stories = storyMetrics(stories);
-	calcOutput(stories);
-	console.log(stories);
-}
-
-// fixing busted parsing that messed up complex fields with quotes, commands, and line breaks
-function fixParsing(results, headers) {
-	for(let i = 0; i < results.data.length; i++) {
-		if(results.data[i].__parsed_extra === undefined) {
-		}
-		else {
-			var mistakes = Math.ceil(results.data[i].__parsed_extra.length/headers.length);
-			console.log(mistakes);
-			for(let j = 0; j < mistakes; j++) {
-				var modifier = (j+1)*(headers.length-1);
-				var tempRow = {};
-				tempRow[headers[0]] = "";
-				
-				for(let k = 0; k < headers.length-1; k++) {
-					tempRow[headers[k+1]] = results.data[i].__parsed_extra[k+(j*modifier)];
-				}
-				results.data.splice(i+1, 0, tempRow);
-			}
-		}
-	}
-	return results;
+	var overview = storyMetrics(stories);
+	calcOutput(overview);
+	console.log(overview);
 }
 
 // concert MS to a day, hour, etc object
@@ -236,35 +195,3 @@ function convertMS(ms) {
   h = h % 24;
   return { d: d, h: h, m: m, s: s };
 };
-
-function buildConfig()
-{
-	var enc = $('#encoding').val();
-	console.log("enc",enc);
-
-	return {
-		
-		delimiter: false,
-		header: false,
-		dynamicTyping: false,
-		skipEmptyLines: false,
-		preview: 0,
-		step: false,
-		worker: false,
-		comments: "",
-		complete: function(results, file) {
-			rolling(results);
-		},
-		error: undefined,
-		
-		// delimiter: $('#delimiter').val(),
-		// header: $('#header').prop('checked'),
-		// dynamicTyping: $('#dynamicTyping').prop('checked'),
-		// skipEmptyLines: $('#skipEmptyLines').prop('checked'),
-		// preview: parseInt($('#preview').val() || 0),
-		// step: $('#stream').prop('checked') ? stepFn : undefined,
-		// encoding: $('#encoding').val(),
-		// worker: $('#worker').prop('checked'),
-		// comments: $('#comments').val(),
-	};
-}
