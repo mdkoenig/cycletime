@@ -15,6 +15,57 @@
 			<input style="visibility: collapse; width: 0px;" type="file" onchange="upload(this.files[0])">
 		</div>
 
+		<div id="whatever">
+			<div class="grid-25">
+				<label>
+					<input type="checkbox" id="stream"> Stream
+					<dfn>Results are delivered row by row to a step function. Use with large inputs that would crash the browser.</dfn>
+				</label>
+
+				<label>
+					<input type="checkbox" id="worker"> Worker thread
+					<dfn>Uses a separate thread so the web page doesn't lock up.</dfn>
+				</label>
+
+				<label>
+					<input type="checkbox" id="header"> Header row
+					<dfn>Keys data by field name rather than an array.</dfn>
+				</label>
+
+				<label>
+					<input type="checkbox" id="dynamicTyping"> Dynamic typing
+					<dfn>Turns numeric data into numbers and true/false into booleans.</dfn>
+				</label>
+
+				<label>
+					<input type="checkbox" id="skipEmptyLines"> Skip empty lines
+					<dfn>By default, empty lines are parsed; check to skip.</dfn>
+				</label>
+			</div>
+
+			<div class="grid-33 push-66">
+				<label>
+					Delimiter:<input type="text" size="4" maxlength="1" placeholder="auto" id="delimiter"><a href="javascript:" id="insert-tab">tab</a>
+					<dfn>The delimiting character. Usually comma or tab. Default is comma.</dfn>
+				</label>
+
+				<label>
+					Preview:<input type="number" min="0" max="1000" placeholder="0" id="preview">
+					<dfn>If &gt; 0, stops parsing after this many rows.</dfn>
+				</label>
+
+				<label>
+					Encoding:<input type="text" id="encoding" placeholder="default" size="7">
+					<dfn>Only applies when reading local files. Default is specified by the browser (usually UTF-8).</dfn>
+				</label>
+
+				<label>
+					Comment char:<input type="text" size="7" maxlength="10" placeholder="default" id="comments">
+					<dfn>If specified, skips lines starting with this string.</dfn>
+				</label>
+			</div>
+		</div>
+
 		<div id="output"></div>
 
 	<script
