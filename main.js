@@ -79,8 +79,9 @@ function updateProperty(issues, property) {
 }
 
 // create the various issues and bring them all together with various actions
-function organizeIssues(issues) {
-	var stories = {
+function organizeIssues(results) {
+	var info = {
+		stories: {},
 		index:[],
 		metrics:{
 			done:[],
@@ -88,45 +89,45 @@ function organizeIssues(issues) {
 		}};
 
 	// go through each issues -- if it is undefined make a new issue object
-	for(let i = 0; i < issues.length; i++) {
-		var currentIssue = issues[i];
-		if(stories[currentIssue.Key] === undefined) {
-			stories[currentIssue.Key] = new Issue(
-				currentIssue["Epic Link"],
-				currentIssue["T"],
-				currentIssue["Summary"],
-				currentIssue["Changed Field"],
-				currentIssue["Change Author"],
-				currentIssue["Created"],
-				currentIssue["Resolution"]
+	for(let i = 0; i < results.length; i++) {
+		var currentRow = results[i]; // define the row we're working with
+		if(info.stories[currentRow.Key] === undefined) { // if the key from this row we're working with doesn't exist, then create a new issue
+			info.stories[currentRow.Key] = new Issue(
+				currentRow["Epic Link"],
+				currentRow["T"],
+				currentRow["Summary"],
+				currentRow["Changed Field"],
+				currentRow["Change Author"],
+				currentRow["Created"],
+				currentRow["Resolution"]
 			);
 			
 			// add the issue to the index
-			stories.index.push(currentIssue.Key);
+			info.index.push(currentRow.Key);
 		}
 		// if it does already exist, then add the action to the existing issue object
 		else {
 
-			if(currentIssue["Change Time"] === "") {
-				currentIssue["Change Time"] = issues[i+1]["Change Time"];
+			if(currentRow["Change Time"] === "") {
+				currentRow["Change Time"] = results[i+1]["Change Time"];
 			}
-			if(currentIssue["Changed Field"] === "status") {
-				stories[currentIssue.Key].actions.push({
-					"old":currentIssue["Old value"],
-					"new":currentIssue["New Value"],
-					"date":new Date(currentIssue["Change Time"])
+			if(currentRow["Changed Field"] === "status") {
+				info.stories[currentRow.Key].actions.push({
+					"old":currentRow["Old value"],
+					"new":currentRow["New Value"],
+					"date":new Date(currentRow["Change Time"])
 				});
 			}
-			else if(currentIssue["Changed Field"] === "resolution") {
-				stories[currentIssue.Key].finished = new Date(currentIssue["Change Time"]);
-				if(currentIssue.Key === "USCISEM-1555") { // here here
-					console.log(currentIssue["Change Time"],currentIssue["Changed Field"]);
+			else if(currentRow["Changed Field"] === "resolution") {
+				info.stories[currentRow.Key].finished = new Date(currentRow["Change Time"]);
+				if(currentRow.Key === "USCISEM-1555") { // here here
+					console.log(currentRow["Change Time"],currentRow["Changed Field"]);
 				}
 			}
 		}
 	}
 	
-	return stories;
+	return info;
 }
 
 // create a new issues object
@@ -142,43 +143,43 @@ function Issue (epic, pbiType, summary, actions, author, created, resolved) { //
 }
 
 // go through the issues and figure out their lead time
-function storyMetrics(stories) {
+function storyMetrics(info) {
 	var key = "";
-	for(let i = 0; i < stories.index.length; i++) { 
-		key = stories.index[i];
+	for(let i = 0; i < info.index.length; i++) { 
+		key = info.index[i];
 		// console.log(stories[key]);
-		if(stories[key].resolved === "Done") {
-			stories[key].lead = stories[key].finished - stories[key].created;
-			stories.metrics.done.push(key);
+		if(info.stories[key].resolved === "Done") {
+			info.stories[key].lead = info.stories[key].finished - info.stories[key].created;
+			info.metrics.done.push(key);
 		}
 	}
-	return stories;
+	return info;
 }
 
 // for each issue, go through and add up their lead times
-function calcOutput(stories) {
+function calcOutput(info) {
 	var key = "";
-	for(let i = 0; i < stories.metrics.done.length; i++) {
-		key = stories.metrics.done[i];
+	for(let i = 0; i < info.metrics.done.length; i++) {
+		key = info.metrics.done[i];
 		// console.log(key);
-		var lead = stories[key].lead;
+		var lead = info.stories[key].lead;
 		// console.log(lead);
-		stories.metrics.total = stories.metrics.total + lead;
+		info.metrics.total = info.metrics.total + lead;
 	}
-	var cycle = stories.metrics.total / stories.index.length;
-	stories.metrics.cycle = convertMS(cycle);
-	return stories;
+	var cycle = info.metrics.total / info.index.length;
+	info.metrics.cycle = convertMS(cycle);
+	return info;
 }
 
 // the main controller moving data from function to function
 function rolling(results) {
 	var headers = results[0];
 	console.log(headers);
-	results = addHeaders(results, headers);
+	results = addHeaders(results, headers); // with headers
 	console.log("Updated results", results);
-	var issues = updatesIssues(results, headers);
-	var stories = organizeIssues(issues);
-	var overview = storyMetrics(stories);
+	results = updatesIssues(results, headers); // with keys for all rows
+	var info = organizeIssues(results); // create issues instead of just rows of a CSV
+	var overview = storyMetrics(info); // calculate metrics based on stories
 	calcOutput(overview);
 	console.log(overview);
 }
