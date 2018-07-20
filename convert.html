@@ -7,7 +7,7 @@
 
 	<body>
 		<h1>DCSV to JSON Conversion</h1>
-		
+
 		<p>Select file to convert CSV to JSON</p>
 
 		<div id="drop">
@@ -17,13 +17,17 @@
 
 		<div id="output"></div>
 
+		<p id="doneBox">
+			<input type="checkbox" value=false id="notDone"> Display work that is not "Done"
+		</p>
+
+		<div id="output2"></div>
+
 	<script
   src="https://code.jquery.com/jquery-3.3.1.min.js"
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
 	<script src="example.js"></script>
-	<script src="papaparse.min.js"></script>
-	<!-- <script src="csv.js"></script> -->
-	<script src="main.js"></script>
+	<script src="main2.js"></script>
 </body>
 </html>

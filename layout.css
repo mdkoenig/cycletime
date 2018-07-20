@@ -1,0 +1,24 @@
+table, td, th {
+	border: 1px solid black;
+	text-align: center;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+#statuses li {
+	list-style-type: none;
+}
+
+.null {
+	background-color: #959595;
+	color: black;
+	text-align: center;
+}
+
+.good {
+	background-color: #c6efce;
+	color: #006100;
+	text-align: center;
+}
